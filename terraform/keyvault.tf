@@ -1,3 +1,4 @@
+#checkov:skip=CKV_AZURE_189:GitHub-hosted runners require public access.
 resource "azurerm_key_vault" "kv_windmill" {
   name                          = "kv-windmill"
   location                      = local.location
@@ -22,6 +23,7 @@ resource "azurerm_key_vault_secret" "db_pass" {
   content_type = "text/plain"
   value        = random_password.postgres_password.result
   key_vault_id = azurerm_key_vault.kv_windmill.id
+  expiration_date = timeadd(timestamp(), "8760h") # 1 year
   tags         = local.common_tags
 }
 
