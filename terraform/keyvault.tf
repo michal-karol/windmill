@@ -19,12 +19,12 @@ resource "random_password" "postgres_password" {
 }
 
 resource "azurerm_key_vault_secret" "db_pass" {
-  name         = "db-pass"
-  content_type = "text/plain"
-  value        = random_password.postgres_password.result
-  key_vault_id = azurerm_key_vault.kv_windmill.id
+  name            = "db-pass"
+  content_type    = "text/plain"
+  value           = random_password.postgres_password.result
+  key_vault_id    = azurerm_key_vault.kv_windmill.id
   expiration_date = timeadd(timestamp(), "8760h") # 1 year
-  tags         = local.common_tags
+  tags            = local.common_tags
 }
 
 resource "azurerm_role_assignment" "kv_secrets_officer_tf" {
