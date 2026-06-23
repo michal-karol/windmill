@@ -7,6 +7,7 @@ permissions:
   security-events: write # Needed to upload-sarif
   contents: read # Needed to clone repo
   actions: read # Potentially needed for private repositories (see https://github.com/github/codeql-action/issues/2117)
+  id-token: write # Reguired by MSDO to update security scan to defender for Cloud 
 
 jobs:
   terraform-unit-tests:
