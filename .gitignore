@@ -45,3 +45,4 @@ terraform.rc
 
 # Custom ignore rules 
 instructions.md 
+.claude
