@@ -1,5 +1,5 @@
-#checkov:skip=CKV_AZURE_189:GitHub-hosted runners require public access.
 resource "azurerm_key_vault" "kv_windmill" {
+  #checkov:skip=CKV_AZURE_189:GitHub-hosted runners require public access.
   name                          = "kv-windmill"
   location                      = local.location
   resource_group_name           = azurerm_resource_group.rg_windmill.name
