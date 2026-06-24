@@ -1,5 +1,9 @@
 resource "azurerm_key_vault" "kv_windmill" {
   #checkov:skip=CKV_AZURE_189:GitHub-hosted runners require public access.
+  #checkov:skip=CKV_AZURE_109:GitHub-hosted runners require public access; network ACLs would block CI pipeline
+  #checkov:skip=CKV_AZURE_110:Personal dev subscription; purge protection disabled to allow clean teardown
+  #checkov:skip=CKV_AZURE_42:Personal dev subscription; soft delete 7 days retained, purge protection intentionally off
+  #checkov:skip=CKV2_AZURE_8:No private endpoint; GitHub-hosted runners require public network access
   name                          = "kv-windmill"
   location                      = local.location
   resource_group_name           = azurerm_resource_group.rg_windmill.name

@@ -3,11 +3,12 @@ resource "tls_private_key" "vm_ssh_key" {
   rsa_bits  = 4096
 }
 resource "azurerm_linux_virtual_machine" "vm_windmill" {
-  name                = "vm-windmill"
-  resource_group_name = azurerm_resource_group.rg_windmill.name
-  location            = local.location
-  size                = "Standard_B2s"
-  admin_username      = "adminuser"
+  name                       = "vm-windmill"
+  resource_group_name        = azurerm_resource_group.rg_windmill.name
+  location                   = local.location
+  allow_extension_operations = false
+  size                       = "Standard_B2s"
+  admin_username             = "adminuser"
   network_interface_ids = [
     azurerm_network_interface.nic_windmill_vm.id
   ]
