@@ -31,12 +31,22 @@ resource "azurerm_key_vault_secret" "db_pass" {
   key_vault_id    = azurerm_key_vault.kv_windmill.id
   expiration_date = "2027-06-24T00:00:00Z"
   tags            = local.common_tags
+
+  # Wait for the Secrets Officer RBAC assignment to propagate before writing.
+  depends_on = [time_sleep.wait_for_kv_rbac]
 }
 
 resource "azurerm_role_assignment" "kv_secrets_officer_tf" {
   scope                = azurerm_key_vault.kv_windmill.id
   role_definition_name = "Key Vault Secrets Officer"
   principal_id         = data.azurerm_client_config.current.object_id
+}
+
+# RBAC role assignments are eventually consistent; give Azure time to
+# propagate the Secrets Officer grant before Terraform writes the secret.
+resource "time_sleep" "wait_for_kv_rbac" {
+  depends_on      = [azurerm_role_assignment.kv_secrets_officer_tf]
+  create_duration = "60s"
 }
 
 resource "azurerm_role_assignment" "kv_secrets_user_vm" {

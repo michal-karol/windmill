@@ -5,7 +5,7 @@ resource "azurerm_network_security_group" "nsg_windmill" {
   resource_group_name = azurerm_resource_group.rg_windmill.name
 
   security_rule {
-    name                       = "Allow 443 access"
+    name                       = "Allow_443_access"
     priority                   = 100
     direction                  = "Inbound"
     access                     = "Allow"
