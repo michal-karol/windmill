@@ -39,7 +39,7 @@ resource "azurerm_key_vault_secret" "db_pass" {
 resource "azurerm_role_assignment" "kv_secrets_officer_tf" {
   scope                = azurerm_key_vault.kv_windmill.id
   role_definition_name = "Key Vault Secrets Officer"
-  principal_id         = data.azurerm_client_config.current.object_id
+  principal_id         = var.tf_principal_object_id
 }
 
 # RBAC role assignments are eventually consistent; give Azure time to

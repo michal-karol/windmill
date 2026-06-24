@@ -17,6 +17,7 @@ env:
   ARM_SUBSCRIPTION_ID: "${{ vars.AZURE_SUBSCRIPTION_ID }}"
   ARM_TENANT_ID: "${{ vars.AZURE_TENANT_ID }}"
   TF_VAR_allowed_source_ip: ${{ vars.TF_VAR_ALLOWED_SOURCE_IP }}
+  TF_VAR_tf_principal_object_id: ${{ vars.TF_PRINCIPAL_OBJECT_ID }}
 
 jobs:
   terraform-plan:
