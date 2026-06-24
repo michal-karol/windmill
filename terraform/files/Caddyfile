@@ -1,0 +1,27 @@
+# Removed: SMTP layer4 proxy (:25 → windmill_server:2525)
+# Azure blocks outbound port 25 by default. Use external relay on 587 if email is needed.
+# See: https://learn.microsoft.com/en-us/azure/virtual-network/troubleshoot-outbound-smtp-connectivity
+# {
+#     layer4 {
+#         :25 {
+#             proxy {
+#                 to windmill_server:2525
+#             }
+#         }
+#     }
+# }
+
+{$BASE_URL} {
+
+        # Extra services: LSP, Multiplayer, Debugger (windmill_extra gateway)
+        reverse_proxy /ws/* /ws_mp/* /ws_debug/* http://windmill_extra:3000
+
+        # Search indexer, Enterprise Edition (windmill_indexer:8002)
+        # reverse_proxy /api/srch/* http://windmill_indexer:8002
+
+        # Default: Windmill server
+        reverse_proxy /* http://windmill_server:8000
+
+        # TLS with custom certificates — uncomment for Phase 3 (internal cert, no public ACME path)
+        # tls /certs/cert.pem /certs/key.pem
+}

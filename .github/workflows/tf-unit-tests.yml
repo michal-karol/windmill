@@ -1,0 +1,55 @@
+name: 'Terraform Unit Tests'
+
+on:
+  push:
+
+permissions:
+  security-events: write # Needed to upload-sarif
+  contents: read # Needed to clone repo
+  actions: read # Potentially needed for private repositories (see https://github.com/github/codeql-action/issues/2117)
+  id-token: write # Reguired by MSDO to update security scan to defender for Cloud 
+
+jobs:
+  terraform-unit-tests:
+    name: 'Terraform Unit Tests'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    
+    steps:
+    # Checkout the repository to the GitHub Actions runner
+    - name: Checkout
+      uses: actions/checkout@v7
+
+    # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v4
+      with:
+        terraform_version: '~1.15'
+
+    # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
+    - name: Terraform Init
+      run: terraform init -backend=false
+
+    # Validate terraform files
+    - name: Terraform Validate
+      run: terraform validate
+
+    # Checks that all Terraform configuration files adhere to a canonical format
+    - name: Terraform Format
+      run: terraform fmt -check -recursive
+    
+    # Perform a security scan of the terraform code using MSDO (see https://github.com/microsoft/security-devops-action)
+    - name: Microsoft Security DevOps
+      uses: microsoft/security-devops-action@v1
+      id: msdo
+      with:
+        categories: IaC
+
+    # Upload results to GitHub Advanced Security
+    - name: Upload results to Security tab
+      if: success() || failure()
+      uses: github/codeql-action/upload-sarif@v4
+      with:
+        sarif_file: ${{ steps.msdo.outputs.sarifFile }}
