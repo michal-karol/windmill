@@ -15,15 +15,17 @@ resource "azurerm_key_vault" "kv_windmill" {
 resource "random_password" "postgres_password" {
   length           = 16
   special          = true
-  override_special = "!#$%&*()-_=+[]{}<>:?"
+  override_special = "!#$*()-_=+[]{}<>:?"
 }
 
+# TODO PR 2: replace expiration_date with rotation_policy block
+# Docs: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret#rotation_policy
 resource "azurerm_key_vault_secret" "db_pass" {
   name            = "db-pass"
   content_type    = "text/plain"
   value           = random_password.postgres_password.result
   key_vault_id    = azurerm_key_vault.kv_windmill.id
-  expiration_date = timeadd(timestamp(), "8760h") # 1 year
+  expiration_date = "2027-06-24T00:00:00Z"
   tags            = local.common_tags
 }
 

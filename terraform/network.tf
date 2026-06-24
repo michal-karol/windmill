@@ -45,5 +45,6 @@ resource "azurerm_public_ip" "pip_windmill" {
   location            = local.location
   sku                 = "Standard"
   allocation_method   = "Static"
+  domain_name_label   = "windmill-slotwinski"
   tags                = local.common_tags
 }

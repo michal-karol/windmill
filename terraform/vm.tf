@@ -35,6 +35,17 @@ resource "azurerm_linux_virtual_machine" "vm_windmill" {
     type = "SystemAssigned"
   }
 
-  custom_data = null
-  tags        = local.common_tags
+  boot_diagnostics {}
+
+  custom_data = base64encode(templatefile("${path.module}/cloud-init.yaml.tpl", {
+    docker_compose_b64 = base64encode(file("${path.module}/files/docker-compose.yml"))
+    caddyfile_b64      = base64encode(file("${path.module}/files/Caddyfile"))
+    env_b64 = base64encode(templatefile("${path.module}/files/.env.tpl", {
+      base_url = azurerm_public_ip.pip_windmill.fqdn
+    }))
+    vault_name  = azurerm_key_vault.kv_windmill.name
+    secret_name = azurerm_key_vault_secret.db_pass.name
+  }))
+
+  tags = local.common_tags
 }
