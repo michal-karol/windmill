@@ -13,6 +13,12 @@
 
 {$BASE_URL} {
 
+        # Use Caddy's internal CA (self-signed) instead of public ACME. The NSG
+        # only allows our own IP on 443, so Let's Encrypt can't reach the box to
+        # validate a challenge; public ACME would fail and serve no cert at all.
+        # Browser shows a one-time "untrusted issuer" warning — expected.
+        tls internal
+
         # Extra services: LSP, Multiplayer, Debugger (windmill_extra gateway)
         reverse_proxy /ws/* /ws_mp/* /ws_debug/* http://windmill_extra:3000
 
