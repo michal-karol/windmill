@@ -27,6 +27,7 @@ env:
   ARM_TENANT_ID: "${{ vars.AZURE_TENANT_ID }}"
   TF_VAR_allowed_source_ip: ${{ vars.TF_VAR_ALLOWED_SOURCE_IP }}
   TF_VAR_tf_principal_object_id: ${{ vars.TF_PRINCIPAL_OBJECT_ID }}
+  TF_VAR_plan_principal_object_id: ${{ vars.PLAN_PRINCIPAL_OBJECT_ID }}
 
 
 jobs:
@@ -138,6 +139,10 @@ jobs:
     runs-on: ubuntu-latest
     environment: dev
     needs: [terraform-plan]
+    # Apply runs as the full-access SP (federated subject: environment:dev),
+    # overriding the read-only SP used by the plan job / global env.
+    env:
+      ARM_CLIENT_ID: "${{ vars.AZURE_CLIENT_ID_APPLY }}"
     defaults:
         run:
           working-directory: terraform
@@ -151,7 +156,7 @@ jobs:
     - name: Azure login with OIDC
       uses: azure/login@v3
       with:
-        client-id: ${{ vars.AZURE_CLIENT_ID }}
+        client-id: ${{ vars.AZURE_CLIENT_ID_APPLY }}
         tenant-id: ${{ vars.AZURE_TENANT_ID }}
         subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 

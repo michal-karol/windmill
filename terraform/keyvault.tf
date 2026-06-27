@@ -49,6 +49,23 @@ resource "time_sleep" "wait_for_kv_rbac" {
   create_duration = "60s"
 }
 
+# Read-only SP used by the plan/drift workflows needs data-plane read so that
+# `terraform plan` can refresh the db-pass secret. This grant is bootstrapped
+# out-of-band (it must exist before the very first plan can run); the import
+# block below brings the existing assignment under management on the next apply.
+resource "azurerm_role_assignment" "kv_secrets_user_plan" {
+  scope                = azurerm_key_vault.kv_windmill.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = var.plan_principal_object_id
+}
+
+# One-time reconciliation of the bootstrapped grant. No-op once in state; safe
+# to remove after the first successful apply on main.
+import {
+  to = azurerm_role_assignment.kv_secrets_user_plan
+  id = "/subscriptions/d109d869-87b3-4bf5-b9de-1380f51a8181/resourceGroups/rg-windmill/providers/Microsoft.KeyVault/vaults/kv-windmill/providers/Microsoft.Authorization/roleAssignments/ae0fca88-8941-4181-b954-25de9b6faca7"
+}
+
 resource "azurerm_role_assignment" "kv_secrets_user_vm" {
   scope                = azurerm_key_vault.kv_windmill.id
   role_definition_name = "Key Vault Secrets User"
