@@ -17,18 +17,10 @@ packages:
 bootcmd:
   - mkdir -p /opt/windmill
 
-# Add Docker repository to Apt sources:
+# Docker's apt repo is configured in runcmd (after its GPG key is installed) so
+# the cloud-init `packages:` stage doesn't try to refresh an unsigned docker repo
+# and skip installing jq/curl (jq is required for the Key Vault password fetch).
 write_files:
-  - path: /etc/apt/sources.list.d/docker.sources
-    permissions: '0644'
-    content: |
-      Types: deb
-      URIs: https://download.docker.com/linux/ubuntu
-      Suites: resolute
-      Components: stable
-      Architectures: amd64
-      Signed-By: /etc/apt/keyrings/docker.asc
-  
   - path: /opt/windmill/docker-compose.yml
     permissions: '0644'
     encoding: b64
@@ -45,13 +37,19 @@ write_files:
     content: ${env_b64}
 
 runcmd:
-  - echo "===== WINDMILL: installing docker ====="
+  - 'echo "===== WINDMILL: installing docker ====="'
   # --> 1. Install Docker from Docker official apt repo <---
 
   # Add Docker's official GPG key:
   - install -m 0755 -d /etc/apt/keyrings
   - curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
   - chmod a+r /etc/apt/keyrings/docker.asc
+
+  # Configure Docker's apt repo now that the key exists (Suites derived from the
+  # running release codename so it tracks the image instead of being hardcoded).
+  - |
+      . /etc/os-release
+      printf 'Types: deb\nURIs: https://download.docker.com/linux/ubuntu\nSuites: %s\nComponents: stable\nArchitectures: amd64\nSigned-By: /etc/apt/keyrings/docker.asc\n' "$VERSION_CODENAME" > /etc/apt/sources.list.d/docker.sources
 
   # Install the Docker packages
   - apt update
@@ -63,7 +61,7 @@ runcmd:
   # --> 2. Create working dir,and download Windmill files <--
   - mkdir -p /opt/windmill # Also in bootcmd — idempotent, kept for clarity
 
-  - echo "===== WINDMILL: fetching db password from key vault ====="
+  - 'echo "===== WINDMILL: fetching db password from key vault ====="'
   # --> 3. Fetch Postgres password from Key Vault via managed identity (IMDS two-call flow)
   # and patch .env in place — all in one shell so variables persist <--
   - |
@@ -75,8 +73,8 @@ runcmd:
         | jq -r '.value')
       sed -i 's|CHANGEME|'"$DB_PASSWORD"'|g' /opt/windmill/.env
 
-  - echo "===== WINDMILL: starting docker compose ====="
+  - 'echo "===== WINDMILL: starting docker compose ====="'
   # --> 4. Start the stack <--
   - docker compose -f /opt/windmill/docker-compose.yml up -d
   # Final marker the pipeline greps for to confirm first-boot completion.
-  - echo "===== WINDMILL_CLOUDINIT_DONE ====="
+  - 'echo "===== WINDMILL_CLOUDINIT_DONE ====="'

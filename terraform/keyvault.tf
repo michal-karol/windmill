@@ -17,9 +17,13 @@ resource "azurerm_key_vault" "kv_windmill" {
 }
 
 resource "random_password" "postgres_password" {
-  length           = 16
-  special          = true
-  override_special = "!#$*()-_=+[]{}<>:?"
+  length  = 24
+  special = true
+  # URL-safe specials ONLY. This value is interpolated raw into DATABASE_URL
+  # (postgres://postgres:<pw>@db/windmill). Characters like # ] : ? @ / break
+  # URL parsing ("invalid port number") and crash-loop windmill_server. Restrict
+  # to RFC 3986 unreserved punctuation so the password is always URL-safe.
+  override_special = "-_.~"
 }
 
 # TODO PR 2: replace expiration_date with rotation_policy block
