@@ -9,6 +9,12 @@
 # loudly, protecting the database). To intentionally tear it down later, remove
 # the lifecycle block (or `terraform state rm`) first.
 resource "azurerm_managed_disk" "pgdata" {
+  # TODO(work-subscription port): implement customer-managed-key encryption via a
+  # disk_encryption_set. Skipped on this dev subscription because CMK requires the
+  # Key Vault to have purge protection ENABLED, which is intentionally off here for
+  # clean teardown (CKV_AZURE_110). Disk is still encrypted at rest with a
+  # platform-managed key by default.
+  #checkov:skip=CKV_AZURE_93:Dev subscription uses platform-managed key encryption; enable CMK/disk_encryption_set when porting to the work subscription.
   name                 = "disk-windmill-pgdata"
   location             = local.location
   resource_group_name  = azurerm_resource_group.rg_windmill.name
@@ -16,6 +22,11 @@ resource "azurerm_managed_disk" "pgdata" {
   create_option        = "Empty"
   disk_size_gb         = 32
   tags                 = local.common_tags
+
+  # Disk is only ever attached to the VM — it needs no network export/import path.
+  # Lock it down (this does not affect the VM reading/writing the attached disk).
+  public_network_access_enabled = false
+  network_access_policy         = "DenyAll"
 
   lifecycle {
     prevent_destroy = true
