@@ -1,7 +1,7 @@
 # Create a resource group
 resource "azurerm_resource_group" "rg_windmill" {
   name     = "rg-windmill"
-  location = local.location
+  location = local.rg_location
   tags     = local.common_tags
 }
 
