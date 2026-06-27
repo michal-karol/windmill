@@ -178,3 +178,26 @@ jobs:
     # Terraform Apply
     - name: Terraform Apply
       run: terraform apply -auto-approve tfplan
+
+    # Surface VM first-boot (cloud-init) progress via the serial console captured
+    # by Azure boot diagnostics. No inbound ports: the log is pulled through the
+    # Azure control plane. Reads use the full SP's Contributor rights.
+    - name: Stream cloud-init progress (serial console)
+      run: |
+        echo "Tailing VM cloud-init via boot diagnostics (no SSH / inbound ports)…"
+        deadline=$(( $(date +%s) + 1200 ))   # up to 20 minutes (image pulls on a burstable B2s can be slow)
+        seen=""
+        while [ "$(date +%s)" -lt "$deadline" ]; do
+          log=$(az vm boot-diagnostics get-boot-log -g rg-windmill -n vm-windmill 2>/dev/null || true)
+          markers=$(printf '%s\n' "$log" | grep -F 'WINDMILL' || true)
+          if [ "$markers" != "$seen" ]; then
+            printf '%s\n' "$markers" | sed 's/^/  /'
+            seen="$markers"
+          fi
+          if printf '%s\n' "$log" | grep -q 'WINDMILL_CLOUDINIT_DONE'; then
+            echo "✅ cloud-init complete — Windmill stack started."
+            exit 0
+          fi
+          sleep 20
+        done
+        echo "::warning::cloud-init not confirmed within 20m. Check the Serial Console / Boot diagnostics blade in the Azure portal."

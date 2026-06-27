@@ -16,6 +16,20 @@ resource "azurerm_network_security_group" "nsg_windmill" {
     destination_address_prefix = "*"
   }
 
+  # TEMP debug: allow SSH from our IP only so we can inspect container logs for
+  # the 502. REMOVE this rule once debugging is complete.
+  security_rule {
+    name                       = "Temp_SSH_debug"
+    priority                   = 110
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = trimspace(var.allowed_source_ip)
+    destination_address_prefix = "*"
+  }
+
   tags = local.common_tags
 }
 

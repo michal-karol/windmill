@@ -14,8 +14,10 @@ resource "azurerm_linux_virtual_machine" "vm_windmill" {
   ]
 
   admin_ssh_key {
-    username   = "adminuser"
-    public_key = tls_private_key.vm_ssh_key.public_key_openssh
+    username = "adminuser"
+    # TEMP debug: use an externally-held keypair (private key off-state) so we can
+    # SSH in to diagnose the 502. Revert to tls_private_key.vm_ssh_key once done.
+    public_key = file("${path.module}/files/vm_ssh_key.pub")
   }
 
   os_disk {
