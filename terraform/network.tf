@@ -12,7 +12,7 @@ resource "azurerm_network_security_group" "nsg_windmill" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "443"
-    source_address_prefix      = var.allowed_source_ip
+    source_address_prefix      = trimspace(var.allowed_source_ip)
     destination_address_prefix = "*"
   }
 

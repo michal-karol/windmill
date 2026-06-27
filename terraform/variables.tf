@@ -1,6 +1,11 @@
 variable "allowed_source_ip" {
   type        = string
   description = "Source IP in CIDR notation (e.g. 1.2.3.4/32) allowed inbound on ports 443"
+
+  validation {
+    condition     = can(cidrhost(trimspace(var.allowed_source_ip), 0))
+    error_message = "allowed_source_ip must be valid CIDR notation, e.g. 1.2.3.4/32 (surrounding whitespace is tolerated)."
+  }
 }
 
 variable "tf_principal_object_id" {
