@@ -1,5 +1,5 @@
 locals {
-  location = "UK South"
+  location = "Denmark East"
   common_tags = {
     environment = "dev",
     managed-by  = "https://github.com/michal-karol/windmill",
