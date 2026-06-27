@@ -6,11 +6,11 @@ DATABASE_URL=postgres://postgres:CHANGEME@db/windmill?sslmode=disable
 # WM_IMAGE=ghcr.io/windmill-labs/windmill-ee:main
 # Community Edition — pinned 2026-06-24
 # Latest tags: https://github.com/windmill-labs/windmill/releases
-WM_IMAGE=ghcr.io/windmill-labs/windmill:1.738.0
+WM_IMAGE=ghcr.io/windmill-labs/windmill:1.741.0
 
 # LSP, Multiplayer, Debugger sidecar — must match WM_IMAGE version
 # Latest tags: https://github.com/windmill-labs/windmill/pkgs/container/windmill-extra
-WM_EXTRA_IMAGE=ghcr.io/windmill-labs/windmill-extra:1.738.0
+WM_EXTRA_IMAGE=ghcr.io/windmill-labs/windmill-extra:1.741.0
 
 # Custom Caddy build with Layer 4 plugin — pinned 2026-06-24
 # Latest tags: https://github.com/windmill-labs/windmill/pkgs/container/caddy-l4

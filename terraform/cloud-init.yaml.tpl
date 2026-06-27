@@ -74,7 +74,8 @@ runcmd:
       sed -i 's|CHANGEME|'"$DB_PASSWORD"'|g' /opt/windmill/.env
 
   - 'echo "===== WINDMILL: preparing persistent data disk ====="'
-  # --> 4. Mount the persistent data disk (LUN 0) that holds the Postgres data <--
+  # --> 4. Mount the persistent data disk (LUN 0): holds the Postgres data AND the
+  # Docker image cache so VM rebuilds don't re-pull ~1.5GB from ghcr. <--
   # Format ONLY if it has no filesystem yet, so data is preserved across VM
   # rebuilds. Mount persistently and make docker wait for the mount so a reboot
   # can't start Postgres against an unmounted (empty) directory.
@@ -86,13 +87,22 @@ runcmd:
       UUID=$(blkid -s UUID -o value "$DISK")
       grep -q "$UUID" /etc/fstab || echo "UUID=$UUID /datadisk ext4 defaults,nofail 0 2" >> /etc/fstab
       mount -a
-      mkdir -p /datadisk/pgdata
+      mkdir -p /datadisk/pgdata /datadisk/docker
       mkdir -p /etc/systemd/system/docker.service.d
       printf '[Unit]\nRequiresMountsFor=/datadisk\n' > /etc/systemd/system/docker.service.d/10-datadisk.conf
+      # Move Docker's image store onto the persistent disk so cached layers survive
+      # VM rebuilds (compose uses pull_policy: missing, so present images aren't re-pulled).
+      mkdir -p /etc/docker
+      printf '{"data-root":"/datadisk/docker"}\n' > /etc/docker/daemon.json
       systemctl daemon-reload
+      systemctl restart docker
 
   - 'echo "===== WINDMILL: starting docker compose ====="'
   # --> 5. Start the stack <--
   - docker compose -f /opt/windmill/docker-compose.yml up -d
+  # Drop any image not used by a running container (e.g. the previous WM_IMAGE
+  # after a version bump) so the persistent image cache doesn't grow unbounded.
+  # No-op when nothing changed, since all current images are in use.
+  - docker image prune -af
   # Final marker the pipeline greps for to confirm first-boot completion.
   - 'echo "===== WINDMILL_CLOUDINIT_DONE ====="'
