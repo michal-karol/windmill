@@ -73,8 +73,26 @@ runcmd:
         | jq -r '.value')
       sed -i 's|CHANGEME|'"$DB_PASSWORD"'|g' /opt/windmill/.env
 
+  - 'echo "===== WINDMILL: preparing persistent data disk ====="'
+  # --> 4. Mount the persistent data disk (LUN 0) that holds the Postgres data <--
+  # Format ONLY if it has no filesystem yet, so data is preserved across VM
+  # rebuilds. Mount persistently and make docker wait for the mount so a reboot
+  # can't start Postgres against an unmounted (empty) directory.
+  - |
+      DISK=/dev/disk/azure/scsi1/lun0
+      for i in $(seq 1 30); do [ -e "$DISK" ] && break; sleep 2; done
+      if ! blkid "$DISK" >/dev/null 2>&1; then mkfs.ext4 -F "$DISK"; fi
+      mkdir -p /datadisk
+      UUID=$(blkid -s UUID -o value "$DISK")
+      grep -q "$UUID" /etc/fstab || echo "UUID=$UUID /datadisk ext4 defaults,nofail 0 2" >> /etc/fstab
+      mount -a
+      mkdir -p /datadisk/pgdata
+      mkdir -p /etc/systemd/system/docker.service.d
+      printf '[Unit]\nRequiresMountsFor=/datadisk\n' > /etc/systemd/system/docker.service.d/10-datadisk.conf
+      systemctl daemon-reload
+
   - 'echo "===== WINDMILL: starting docker compose ====="'
-  # --> 4. Start the stack <--
+  # --> 5. Start the stack <--
   - docker compose -f /opt/windmill/docker-compose.yml up -d
   # Final marker the pipeline greps for to confirm first-boot completion.
   - 'echo "===== WINDMILL_CLOUDINIT_DONE ====="'
