@@ -142,10 +142,6 @@ runcmd:
   # are preserved, so this stays fast and keeps data.
   - docker compose -f /opt/windmill/docker-compose.yml down --remove-orphans 2>/dev/null || true
   - docker compose -f /opt/windmill/docker-compose.yml up -d --force-recreate
-  # Drop any image not used by a running container (e.g. the previous WM_IMAGE
-  # after a version bump) so the persistent image cache doesn't grow unbounded.
-  # No-op when nothing changed, since all current images are in use.
-  - docker image prune -af
   # Gate the completion marker on the server actually answering (not just
   # "containers created"), so a broken stack surfaces as a failed apply instead of
   # a green one. Emits DONE when healthy, FAILED if it never comes up (~5 min cap).
@@ -158,6 +154,11 @@ runcmd:
         sleep 5
       done
       if [ "$ok" = 1 ]; then
+        # Only now that the stack is confirmed UP do we prune unused images. Current
+        # images are in use (protected); old/unused ones (e.g. the previous WM_IMAGE
+        # after a bump) are reclaimed automatically. Because this never runs when the
+        # stack is down, it can't wipe the cache -> no manual disk cleanup needed.
+        docker image prune -af
         echo "===== WINDMILL_CLOUDINIT_DONE ====="
       else
         echo "===== WINDMILL_CLOUDINIT_FAILED ====="
