@@ -37,7 +37,7 @@ write_files:
     content: ${env_b64}
 
     # Backup script
-  - path: opt/windmill/backup.sh
+  - path: /opt/windmill/backup.sh
     permissions: '0755'
     content: |
       #!/usr/bin/env bash
@@ -53,7 +53,7 @@ write_files:
       TOKEN=$(curl -s -H "Metadata: true" \
         "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://storage.azure.com/" \
         | jq -r '.access_token')
-      3. Upload via the Blob API
+      # 3. Upload via the Blob API
       curl -sf -X PUT \
         -H "Authorization: Bearer $TOKEN" \
         -H "x-ms-blob-type: BlockBlob" \
