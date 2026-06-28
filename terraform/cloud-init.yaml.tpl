@@ -135,10 +135,30 @@ runcmd:
 
   - 'echo "===== WINDMILL: starting docker compose ====="'
   # --> 5. Start the stack <--
-  - docker compose -f /opt/windmill/docker-compose.yml up -d
+  # The image cache lives on the persistent docker data-root, which also carries
+  # the previous VM's containers. An abrupt VM destroy orphans their RW layers
+  # ("RWLayer unexpectedly nil"), so reusing them fails. Clear and recreate fresh
+  # every boot — the cached images and the bind-mounted /datadisk/pgdata (the DB)
+  # are preserved, so this stays fast and keeps data.
+  - docker compose -f /opt/windmill/docker-compose.yml down --remove-orphans 2>/dev/null || true
+  - docker compose -f /opt/windmill/docker-compose.yml up -d --force-recreate
   # Drop any image not used by a running container (e.g. the previous WM_IMAGE
   # after a version bump) so the persistent image cache doesn't grow unbounded.
   # No-op when nothing changed, since all current images are in use.
   - docker image prune -af
-  # Final marker the pipeline greps for to confirm first-boot completion.
-  - 'echo "===== WINDMILL_CLOUDINIT_DONE ====="'
+  # Gate the completion marker on the server actually answering (not just
+  # "containers created"), so a broken stack surfaces as a failed apply instead of
+  # a green one. Emits DONE when healthy, FAILED if it never comes up (~5 min cap).
+  - 'echo "===== WINDMILL: waiting for server health ====="'
+  - |
+      ok=0
+      for i in $(seq 1 60); do
+        SIP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' windmill-windmill_server-1 2>/dev/null)
+        if [ -n "$SIP" ] && curl -sf -o /dev/null "http://$SIP:8000/api/version"; then ok=1; break; fi
+        sleep 5
+      done
+      if [ "$ok" = 1 ]; then
+        echo "===== WINDMILL_CLOUDINIT_DONE ====="
+      else
+        echo "===== WINDMILL_CLOUDINIT_FAILED ====="
+      fi
