@@ -200,8 +200,12 @@ jobs:
             printf '%s\n' "$markers" | tail -n +"$((printed + 1))" | sed 's/^/  /'
             printed="$count"
           fi
+          if printf '%s\n' "$markers" | grep -q 'WINDMILL_CLOUDINIT_FAILED'; then
+            echo "::error::cloud-init finished but the Windmill server never became healthy."
+            exit 1
+          fi
           if printf '%s\n' "$markers" | grep -q 'WINDMILL_CLOUDINIT_DONE'; then
-            echo "✅ cloud-init complete — Windmill stack started."
+            echo "✅ cloud-init complete — Windmill server healthy."
             exit 0
           fi
           sleep 20
