@@ -36,6 +36,42 @@ write_files:
     encoding: b64
     content: ${env_b64}
 
+    # Backup script
+  - path: opt/windmill/backup.sh
+    permissions: '0755'
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      ACCOUNT="stwindmilltf"
+      CONTAINER="backups"
+      FILE="windmill-$(date -u +%Y%m%d-%H%M%S).sql.gz"
+      TMP="/tmp/$FILE"
+      # 1. Dump + compress from the running postgres container
+      docker compose -f /opt/windmill/docker-compose.yml exec -T db \
+      pg_dump -U postgres windmill | gzip > "$TMP"
+      # 2. Managed identity token for Azure Storage
+      TOKEN=$(curl -s -H "Metadata: true" \
+        "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://storage.azure.com/" \
+        | jq -r '.access_token')
+      3. Upload via the Blob API
+      curl -sf -X PUT \
+        -H "Authorization: Bearer $TOKEN" \
+        -H "x-ms-blob-type: BlockBlob" \
+        -H "x-ms-version: 2021-08-06" \
+        -H "Content-Type: application/gzip" \
+        --data-binary @"$TMP" \
+        "https://$ACCOUNT.blob.core.windows.net/$CONTAINER/$FILE"
+      # 4. Remove the local temp file
+      rm -f "$TMP"
+  
+  # Cron task for backup for 3am
+  - path: /etc/cron.d/windmill-backup
+    permissions: '0644'
+    content: |
+      # Windmill DB backup at 03:00 UTC
+      0 3 * * * root /opt/windmill/backup.sh >> /var/log/windmill-backup.log 2>&1
+
+
 runcmd:
   - 'echo "===== WINDMILL: installing docker ====="'
   # --> 1. Install Docker from Docker official apt repo <---

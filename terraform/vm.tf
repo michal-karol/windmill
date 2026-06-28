@@ -29,7 +29,11 @@ resource "azurerm_linux_virtual_machine" "vm_windmill" {
     publisher = "Canonical"
     offer     = "ubuntu-26_04-lts"
     sku       = "server"
-    version   = "latest"
+    # Pinned for reproducibility (was "latest", which can silently force VM
+    # replacement when Canonical publishes a new image). Bump deliberately; check
+    # newer with: az vm image list -l denmarkeast -p Canonical -f ubuntu-26_04-lts \
+    #   --sku server --all --query "[?sku=='server'].version" -o tsv | sort -V | tail
+    version = "26.04.202606210"
   }
 
   disable_password_authentication = true

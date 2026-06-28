@@ -47,3 +47,5 @@ terraform.rc
 instructions.md 
 .claude
 *.pem
+backup.md
+bastion.md
