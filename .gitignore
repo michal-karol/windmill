@@ -43,9 +43,13 @@ terraform.rc
 # Uncomment the line below if you want to ignore planout files.
 # planout
 
-# Custom ignore rules 
-instructions.md 
+# Custom ignore rules
+instructions.md
 .claude
 *.pem
 backup.md
 bastion.md
+monitoring.md
+
+# Internal handover/runbook docs (contain tenant/sub/SP IDs and infra naming)
+docs/
