@@ -1,0 +1,47 @@
+name: 'Bastion destroy'
+
+# Tear the Bastion down once no longer needed
+# cron safety net in case someone forgets (Bastion ~£140/mo if left 24/7).
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 1 * * *' # 01:00 UTC
+
+# Set concurrency so manual apply can't race the scheduled destroy on the same state
+# cancel-in-progress: false lets the run finish to avoid state coraption
+# Shared group name with bastion-create so the two workflows serialise together.
+concurrency:
+  group: bastion-tfstate
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID_APPLY }}
+  ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+
+jobs:
+  destroy:
+    name: 'Bastion destroy'
+    runs-on: ubuntu-latest
+    environment: dev
+    defaults:
+      run:
+        working-directory: terraform/bastion
+    steps:
+      - uses: actions/checkout@v7
+      - name: Azure login (OIDC)
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID_APPLY }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_wrapper: false
+      - run: terraform init
+      # destroy does nothing if bastion doesnt exists in state
+      - run: terraform destroy -auto-approve
