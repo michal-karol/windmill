@@ -2,11 +2,13 @@ resource "tls_private_key" "vm_ssh_key" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
+
+#checkov:skip=CKV_AZURE_50:AADSSHLoginForLinux required for Entra ID SSH via Bastion
 resource "azurerm_linux_virtual_machine" "vm_windmill" {
   name                       = "vm-windmill"
   resource_group_name        = azurerm_resource_group.rg_windmill.name
   location                   = local.location
-  allow_extension_operations = false
+  allow_extension_operations = true
   size                       = "Standard_B2s"
   admin_username             = "adminuser"
   network_interface_ids = [
@@ -55,4 +57,14 @@ resource "azurerm_linux_virtual_machine" "vm_windmill" {
   }))
 
   tags = local.common_tags
+}
+
+# Extention for bastion ssh to vm
+resource "azurerm_virtual_machine_extension" "aad_ssh_login" {
+  name                       = "AADSSHLoginForLinux"
+  virtual_machine_id         = azurerm_linux_virtual_machine.vm_windmill.id
+  publisher                  = "Microsoft.Azure.ActiveDirectory"
+  type                       = "AADSSHLoginForLinux"
+  type_handler_version       = "1.0"
+  auto_upgrade_minor_version = true
 }
