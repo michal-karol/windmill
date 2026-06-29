@@ -1,22 +1,17 @@
-name: 'Bastion on-demand'
+name: 'Bastion destroy'
 
+# Tear the Bastion down once no longer needed
+# cron safety net in case someone forgets (Bastion ~£140/mo if left 24/7).
 on:
   workflow_dispatch:
-    inputs:
-      action:
-        description: 'apply = create bastion, destroy = remove it'
-        required: true
-        type: choice
-        options: [apply, destroy]
-        default: apply
   schedule:
-    # Bastion cost £140 if left 24/7 so we have cron task as a safty net if someone forgets to destroy it
     - cron: '0 1 * * *' # 01:00 UTC
 
 # Set concurrency so manual apply can't race the scheduled destroy on the same state
-# cancel-in-progress: false lets the run finish to avoid state coraption 
+# cancel-in-progress: false lets the run finish to avoid state coraption
+# Shared group name with bastion-create so the two workflows serialise together.
 concurrency:
-  group: ${{ github.workflow }}
+  group: bastion-tfstate
   cancel-in-progress: false
 
 permissions:
@@ -29,10 +24,10 @@ env:
   ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
 
 jobs:
-  bastion:
-    name: 'Bastion'
+  destroy:
+    name: 'Bastion destroy'
     runs-on: ubuntu-latest
-    environment: dev 
+    environment: dev
     defaults:
       run:
         working-directory: terraform/bastion
@@ -48,10 +43,5 @@ jobs:
         with:
           terraform_wrapper: false
       - run: terraform init
-      # Scheduled run = always destroy if it exists, do nothing if it doesn't
-      # Manual run = chosen action.
-      - run: |
-          ACTION="${{ github.event.inputs.action }}"
-          [ "${{ github.event_name }}" = "schedule" ] && ACTION="destroy"
-          echo "Running terraform $ACTION"
-          terraform "$ACTION" -auto-approve
+      # destroy does nothing if bastion doesnt exists in state
+      - run: terraform destroy -auto-approve
