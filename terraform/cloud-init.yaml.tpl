@@ -21,6 +21,16 @@ bootcmd:
 # the cloud-init `packages:` stage doesn't try to refresh an unsigned docker repo
 # and skip installing jq/curl (jq is required for the Key Vault password fetch).
 write_files:
+  # Let unattended-upgrades reboot the VM ONLY when a patch sets the
+  # reboot-required flag (e.g. a kernel update), at 04:00. The stack returns on
+  # its own afterwards (containers restart: unless-stopped, data disk auto-mounts).
+  - path: /etc/apt/apt.conf.d/52-windmill-autoreboot
+    permissions: '0644'
+    content: |
+      Unattended-Upgrade::Automatic-Reboot "true";
+      Unattended-Upgrade::Automatic-Reboot-Time "04:00";
+      Unattended-Upgrade::Automatic-Reboot-WithUsers "true";
+
   - path: /opt/windmill/docker-compose.yml
     permissions: '0644'
     encoding: b64
