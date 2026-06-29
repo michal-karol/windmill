@@ -1,0 +1,57 @@
+name: 'Bastion on-demand'
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'apply = create bastion, destroy = remove it'
+        required: true
+        type: choice
+        options: [apply, destroy]
+        default: apply
+  schedule:
+    # Bastion cost £140 if left 24/7 so we have cron task as a safty net if someone forgets to destroy it
+    - cron: '0 1 * * *' # 01:00 UTC
+
+# Set concurrency so manual apply can't race the scheduled destroy on the same state
+# cancel-in-progress: false lets the run finish to avoid state coraption 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID_APPLY }}
+  ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+
+jobs:
+  bastion:
+    name: 'Bastion'
+    runs-on: ubuntu-latest
+    environment: dev 
+    defaults:
+      run:
+        working-directory: terraform/bastion
+    steps:
+      - uses: actions/checkout@v7
+      - name: Azure login (OIDC)
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID_APPLY }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_wrapper: false
+      - run: terraform init
+      # Scheduled run = always destroy if it exists, do nothing if it doesn't
+      # Manual run = chosen action.
+      - run: |
+          ACTION="${{ github.event.inputs.action }}"
+          [ "${{ github.event_name }}" = "schedule" ] && ACTION="destroy"
+          echo "Running terraform $ACTION"
+          terraform "$ACTION" -auto-approve
