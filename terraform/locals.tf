@@ -1,5 +1,5 @@
 locals {
-  location = "Denmark East"
+  location = "UK West"
   # Pinned to the RG's existing region. An RG's location is only metadata for its
   # own record (child resources may live in any region), and azurerm treats it as
   # ForceNew — tying it to local.location would destroy/recreate rg-windmill, which

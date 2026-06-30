@@ -1,10 +1,7 @@
 # Manages a Log Analytics Workspace
 resource "azurerm_log_analytics_workspace" "log_windmill" {
-  name = "log-windmill"
-  # Denmark East does not offer Log Analytics workspaces, so the workspace (and the
-  # DCR, which must match the workspace region) live in UK South. The VM stays in
-  # Denmark East and ships telemetry cross-region — supported by AMA.
-  location            = local.rg_location
+  name                = "log-windmill"
+  location            = local.location
   resource_group_name = azurerm_resource_group.rg_windmill.name
   sku                 = "PerGB2018"
   retention_in_days   = 30
@@ -32,8 +29,7 @@ resource "azurerm_virtual_machine_extension" "ama_vm_windmill" {
 resource "azurerm_monitor_data_collection_rule" "dcr_windmill" {
   name                = "dcr-windmill"
   resource_group_name = azurerm_resource_group.rg_windmill.name
-  # Must match the workspace region (UK South), not the VM region — see workspace above.
-  location = local.rg_location
+  location            = local.location
 
   destinations {
     log_analytics {

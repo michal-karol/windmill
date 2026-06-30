@@ -29,7 +29,9 @@ resource "azurerm_managed_disk" "pgdata" {
   network_access_policy         = "DenyAll"
 
   lifecycle {
-    prevent_destroy = true
+    # TEMP(UK West migration): disabled so the region change can replace this disk —
+    # the dev DB is disposable. Set back to true after the rebuild applies cleanly.
+    prevent_destroy = false
   }
 }
 
