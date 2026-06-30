@@ -26,8 +26,8 @@ resource "azurerm_virtual_machine_extension" "ama_vm_windmill" {
 
 
 # Manages a Data Collection Rules
-resource "azurerm_monitor_data_collection_rule" "dcr_windmi" {
-  name                = "dcr-widmill"
+resource "azurerm_monitor_data_collection_rule" "dcr_windmill" {
+  name                = "dcr-windmill"
   resource_group_name = azurerm_resource_group.rg_windmill.name
   location            = local.location
 
@@ -75,5 +75,5 @@ resource "azurerm_monitor_data_collection_rule" "dcr_windmi" {
 resource "azurerm_monitor_data_collection_rule_association" "dcra_windmill" {
   name                    = "dcra-windmill"
   target_resource_id      = azurerm_linux_virtual_machine.vm_windmill.id
-  data_collection_rule_id = azurerm_monitor_data_collection_rule.dcr_windmi.id
+  data_collection_rule_id = azurerm_monitor_data_collection_rule.dcr_windmill.id
 }
