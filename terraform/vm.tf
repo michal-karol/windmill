@@ -3,12 +3,12 @@ resource "tls_private_key" "vm_ssh_key" {
   rsa_bits  = 4096
 }
 
-#checkov:skip=CKV_AZURE_50:AADSSHLoginForLinux required for Entra ID SSH via Bastion
 resource "azurerm_linux_virtual_machine" "vm_windmill" {
+  #checkov:skip=CKV_AZURE_50:AADSSHLoginForLinux required for Entra ID SSH via Bastion
   name                       = "vm-windmill"
   resource_group_name        = azurerm_resource_group.rg_windmill.name
   location                   = local.location
-  allow_extension_operations = true
+  allow_extension_operations = true # needed for bastion and for Azure monitoring agent. 
   size                       = "Standard_B2s"
   admin_username             = "adminuser"
   network_interface_ids = [
