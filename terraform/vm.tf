@@ -9,7 +9,7 @@ resource "azurerm_linux_virtual_machine" "vm_windmill" {
   resource_group_name        = azurerm_resource_group.rg_windmill.name
   location                   = local.location
   allow_extension_operations = true # needed for bastion and for Azure monitoring agent. 
-  size                       = "Standard_B2s"
+  size                       = "Standard_B2als_v2"
   admin_username             = "adminuser"
   network_interface_ids = [
     azurerm_network_interface.nic_windmill_vm.id
@@ -33,7 +33,7 @@ resource "azurerm_linux_virtual_machine" "vm_windmill" {
     sku       = "server"
     # Pinned for reproducibility (was "latest", which can silently force VM
     # replacement when Canonical publishes a new image). Bump deliberately; check
-    # newer with: az vm image list -l denmarkeast -p Canonical -f ubuntu-24_04-lts \
+    # newer with: az vm image list -l ukwest -p Canonical -f ubuntu-24_04-lts \
     #   --sku server --all --query "[?sku=='server'].version" -o tsv | sort -V | tail
     version = "24.04.202606060"
   }
