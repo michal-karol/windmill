@@ -28,3 +28,14 @@ variable "db_password" {
     error_message = "db_password must be >=16 chars and URL-safe (only A-Z a-z 0-9 . _ ~ -); other characters break DATABASE_URL parsing."
   }
 }
+
+variable "teams_webhook_url" {
+  type        = string
+  sensitive   = true
+  description = "Teams workflow endpoint that posts alerts to a channel, sensitive as anyone holding this URL can post to the channel - this is set by TEAMS_WEBHOOK_URL GitHub secret"
+}
+
+variable "alert_email" {
+  type        = string
+  description = "Email destination for monitoring alerts - set in github variable TF_VAR_ALERT_EMAIL"
+}
